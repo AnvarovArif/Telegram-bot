@@ -1,4 +1,4 @@
-echo 'import telebot
+import telebot
 from flask import Flask, request
 import time
 import threading
@@ -9,7 +9,6 @@ ADMIN_ID = 73493209
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
-
 user_data = {}
 
 @app.route("/webhook", methods=["POST"])
@@ -61,4 +60,3 @@ def finish_registration(user_id, msg_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-' > main.py
